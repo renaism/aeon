@@ -5,15 +5,15 @@ const utils = require('./utils.js');
 dotenv.config();
 
 const client = new Client({
-    intents: [Intents.FLAGS.GUILDS]
+    intents: [Intents.FLAGS.GUILDS],
 });
-client.isDebug = Boolean(process.env.DEBUG);
+client.isDebug = process.env.DEBUG === 'true';
 
 // Load command modules
 client.commands = utils.getModules('./commands');
 
 if (client.isDebug) {
-    const devCommands = utils.getModules('./dev-commands')
+    const devCommands = utils.getModules('./dev-commands');
     client.commands = client.commands.concat(devCommands);
 }
 
