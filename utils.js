@@ -1,38 +1,23 @@
 const fs = require('fs');
+const { Collection } = require('discord.js');
 
 module.exports = {
     /**
-     * Register commands from command files in a folder
+     * Get modules from a folder
      * 
-     * @param {Client} client
-     * @param {String} folder 
+     * @param {String} folder The folder where module files (*.js) are located.
+     * @return {Collection} Collection of modules.
      */
-    registerCommands(client, folder) {
-        const commandFiles = fs.readdirSync(folder).filter(file => file.endsWith('.js'));
+    getModules(folder) {
+        const modules = new Collection();
+        const moduleFiles = fs.readdirSync(folder, options={ withFileTypes: true })
+            .filter(file => file.isFile() && file.name.endsWith('.js'));
 
-        for (const file of commandFiles) {
-            const command = require(`${folder}/${file}`);
-            client.commands.set(command.data.name, command);
+        for (const file of moduleFiles) {
+            const mod = require(`${folder}/${file.name}`);
+            modules.set(file.name.slice(0, -3), mod);
         }
-    },
 
-    /**
-     * Register events from event files in a folder
-     * 
-     * @param {Client} client
-     * @param {String} folder
-     */
-     registerEvents(client, folder) {
-        const eventFiles = fs.readdirSync(folder).filter(file => file.endsWith('.js'));
-
-        for (const file of eventFiles) {
-            const event = require(`${folder}/${file}`);
-        
-            if (event.once) {
-                client.once(event.name, (...args) => event.execute(...args));
-            } else {
-                client.on(event.name, async (...args) => await event.execute(...args));
-            }
-        }
+        return modules;
     },
 };

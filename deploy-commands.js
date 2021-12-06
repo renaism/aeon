@@ -2,15 +2,18 @@ const fs = require('fs');
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
 const dotenv = require('dotenv');
+const utils = require('./utils.js');
 
 dotenv.config();
 
 const commands = [];
-const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
-for (const file of commandFiles) {
-    const command = require(`./commands/${file}`);
-    commands.push(command.data.toJSON());
+utils.getModules('./commands')
+    .forEach(command => commands.push(command.data.toJSON()));
+
+if (Boolean(process.env.DEBUG)) {
+    utils.getModules('./dev-commands')
+        .forEach(command => commands.push(command.data.toJSON()));
 }
 
 const rest = new REST({ version: '9' }).setToken(process.env.TOKEN);
