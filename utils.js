@@ -14,7 +14,9 @@ module.exports = {
             .filter(file => file.isFile() && file.name.endsWith('.js'));
 
         for (const file of moduleFiles) {
-            const mod = require(`${folder}/${file.name}`);
+            const fpath = `${folder}/${file.name}`;
+            delete require.cache[require.resolve(fpath)];
+            const mod = require(fpath);
             modules.set(file.name.slice(0, -3), mod);
         }
 
