@@ -20,7 +20,6 @@ if (client.isDebug) {
 // Register event modules
 client.events = utils.getModules('./events');
 client.events.forEach((event, name) => {
-    console.log(event, name);
     if (event.once) {
         client.once(name, (...args) => event.execute(...args));
     } else {
