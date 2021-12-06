@@ -5,7 +5,10 @@ const utils = require('./utils.js');
 dotenv.config();
 
 const client = new Client({
-    intents: [Intents.FLAGS.GUILDS],
+    intents: [
+        Intents.FLAGS.GUILDS,
+        Intents.FLAGS.GUILD_VOICE_STATES,
+    ],
 });
 client.isDebug = process.env.DEBUG === 'true';
 
