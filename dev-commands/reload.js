@@ -6,6 +6,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('reload')
         .setDescription('[DEV] Reload all commands.'),
+    dev: true,
     async execute(interaction) {
         await interaction.deferReply();
         const oldCommands = interaction.client.commands.clone();

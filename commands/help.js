@@ -13,6 +13,7 @@ module.exports = {
 
         let commandHelp = '';
         interaction.client.commands.forEach(command => {
+            if (command.dev) return;
             commandHelp += `**\`/${command.data.name}\`** ${command.data.description}\n`;
         });
         embed.setDescription(commandHelp);
