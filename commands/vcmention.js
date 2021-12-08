@@ -20,8 +20,8 @@ module.exports = {
         let mentions = '';
         voiceChannel.members.forEach(member => {
             if (member === interaction.member) return;
-            mentions += `${member}`;
+            mentions += ` ${member}`;
         });
-        await interaction.reply(`**${interaction.member.nickname}**: ${mentions}`);
+        await interaction.reply(`**${interaction.member.displayName}**:${mentions}`);
     },
 };
