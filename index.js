@@ -1,8 +1,6 @@
 const { Client, Intents } = require('discord.js');
-const dotenv = require('dotenv');
+const config = require('./config.js');
 const utils = require('./utils.js');
-
-dotenv.config();
 
 const client = new Client({
     intents: [
@@ -10,12 +8,11 @@ const client = new Client({
         Intents.FLAGS.GUILD_VOICE_STATES,
     ],
 });
-client.isDebug = process.env.DEBUG === 'true';
 
 // Load command modules
 client.commands = utils.getModules('./commands');
 
-if (client.isDebug) {
+if (config.env === 'dev') {
     const devCommands = utils.getModules('./dev-commands');
     client.commands = client.commands.concat(devCommands);
 }
@@ -30,4 +27,4 @@ client.events.forEach((event, name) => {
     }
 });
 
-client.login(process.env.TOKEN);
+client.login(config.token);

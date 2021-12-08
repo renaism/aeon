@@ -1,4 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const config = require('../config.js');
 const utils = require('../utils.js');
 
 module.exports = {
@@ -13,7 +14,7 @@ module.exports = {
             interaction.client.commands.clear();
             interaction.client.commands = utils.getModules('./commands');
 
-            if (interaction.client.isDebug) {
+            if (config.env === 'dev') {
                 const devCommands = utils.getModules('./dev-commands');
                 interaction.client.commands = interaction.client.commands.concat(devCommands);
             }
