@@ -8,7 +8,7 @@ module.exports = {
         .setDescription(`List all of ${config.name}'s commands.`),
     async execute(interaction) {
         const embed = new MessageEmbed()
-            .setAuthor('Aeon', interaction.client.user.avatarURL({ size: 16 }), config.homepage)
+            .setAuthor(config.name, interaction.client.user.avatarURL({ size: 16 }), config.homepage)
             .setTitle('Commands');
 
         let commandHelp = '';
