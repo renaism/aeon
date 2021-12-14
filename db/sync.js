@@ -1,7 +1,7 @@
 const sequelize = require('./connection.js');
 
 // Initialize models
-require('../models/twitter-account.js')(sequelize);
+require('./models.js');
 
 const force = process.argv.includes('--force') || process.argv.includes('-f');
 
