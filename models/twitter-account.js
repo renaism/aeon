@@ -7,11 +7,8 @@ module.exports = (sequelize) => {
         username: {
             type: DataTypes.STRING,
             primaryKey: true,
-            allowNull: false,
         },
-        last_tweet_id: {
-            type: DataTypes.INTEGER,
-        },
+        lastTweetId: DataTypes.STRING,
     }, {
         sequelize,
         modelName: 'TwitterAccount',
