@@ -4,13 +4,16 @@ class TwitterAccount extends Model {}
 
 module.exports = (sequelize) => {
     return TwitterAccount.init({
-        username: {
+        id: {
             type: DataTypes.STRING,
             primaryKey: true,
         },
+        username: DataTypes.STRING,
+        name: DataTypes.STRING,
         lastTweetId: DataTypes.STRING,
     }, {
         sequelize,
-        modelName: 'TwitterAccount',
+        modelName: 'twitterAccount',
+        underscored: true,
     });
 };

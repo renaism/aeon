@@ -1,6 +1,8 @@
+const { Sequelize } = require('sequelize');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { MessageEmbed } = require('discord.js');
 const { TwitterAccount, TwitterFollow } = require('../db/models.js');
+const twitterClient = require('../clients/twitter-api.js');
 
 async function follow(interaction) {
     const username = interaction.options.getString('username', true);
@@ -9,32 +11,72 @@ async function follow(interaction) {
     // Check if the twitter account is already followed in the server
     const twitterFollow = await TwitterFollow.findOne({
         where: {
-            twitterAccountUsername: username,
             guildId: interaction.guildId,
+        },
+        include: {
+            model: TwitterAccount,
+            where: Sequelize.where(Sequelize.fn('lower', Sequelize.col('username')), username.toLowerCase()),
         },
     });
 
     if (twitterFollow) {
         const embed = new MessageEmbed()
             .setColor('YELLOW')
-            .setDescription(`[@${username}](https://twitter.com/${username}/) is already followed in this server! See **\`/twlist\`**`);
+            .setDescription(`[@${username}](https://twitter.com/${username}/) is already followed in this server! See **\`/twitter list\`**`);
+
+        return interaction.reply({ embeds: [embed], ephemeral: true });
+    }
+
+    // Get twitter user
+    const twitterUser = await twitterClient.v2.userByUsername(username);
+
+    if (!twitterUser.data) {
+        const embed = new MessageEmbed()
+            .setColor('YELLOW')
+            .setDescription(`Can't find twitter account with the handle **@${username}**!`);
 
         return interaction.reply({ embeds: [embed], ephemeral: true });
     }
 
     // Create twitter account entry if not exist yet
-    await TwitterAccount.findOrCreate({
+    const [twitterAccount, twitterAccountCreated] = await TwitterAccount.findOrCreate({
         where: {
-            username: username,
+            id: twitterUser.data.id,
+        },
+        defaults: {
+            username: twitterUser.data.username,
+            name: twitterUser.data.name,
         },
     });
 
-    // Create twitter follow entry for the server
-    await TwitterFollow.create({
-        twitterAccountUsername: username,
-        guildId: interaction.guildId,
-        channelId: channel.id,
+    if (twitterAccountCreated) {
+        // Get the last tweet from the user for lastTweetId field
+        const latestTweets = await twitterClient.v2.userTimeline(twitterUser.data.id, {
+            exclude: ['retweets', 'replies'],
+            max_results: 5,
+        });
+
+        if (latestTweets.tweets.length > 0) {
+            twitterAccount.lastTweetId = latestTweets.tweets[0].id;
+            await twitterAccount.save();
+        }
+    }
+
+    // Create new twitter follow entry for the server
+    const [newTwitterFollow, twitterFollowCreated] = await TwitterFollow.findOrCreate({
+        where: {
+            twitterAccountId: twitterAccount.id,
+            guildId: interaction.guildId,
+        },
+        defaults: {
+            channelId: channel.id,
+        },
     });
+
+    if (!twitterFollowCreated) {
+        newTwitterFollow.channelId = channel.id;
+        await newTwitterFollow.save();
+    }
 
     const embed = new MessageEmbed()
         .setColor('BLUE')
@@ -49,8 +91,11 @@ async function unfollow(interaction) {
     // Check if the twitter account is already followed in the server
     const twitterFollow = await TwitterFollow.findOne({
         where: {
-            twitterAccountUsername: username,
             guildId: interaction.guildId,
+        },
+        include: {
+            model: TwitterAccount,
+            where: Sequelize.where(Sequelize.fn('lower', Sequelize.col('username')), username.toLowerCase()),
         },
     });
 
@@ -63,24 +108,19 @@ async function unfollow(interaction) {
     }
 
     // Delete the twitter follow entry for this server
-    await TwitterFollow.destroy({
-        where: {
-            twitterAccountUsername: username,
-            guildId: interaction.guildId,
-        },
-    });
+    await twitterFollow.destroy();
 
     // If no other server follows the twitter account, delete the twitter account entry
     const twitterFollowsCount = await TwitterFollow.count({
         where: {
-            twitterAccountUsername: username,
+            twitterAccountId: twitterFollow.twitterAccountId,
         },
     });
 
     if (twitterFollowsCount === 0) {
         await TwitterAccount.destroy({
             where: {
-                username: username,
+                id: twitterFollow.twitterAccountId,
             },
         });
     }
@@ -98,6 +138,7 @@ async function list(interaction) {
         where: {
             guildId: interaction.guildId,
         },
+        include: TwitterAccount,
     });
 
     if (twitterFollows.length === 0) {
@@ -109,9 +150,10 @@ async function list(interaction) {
 
     let followList = '';
     twitterFollows.forEach((twitterFollow, i) => {
-        const username = twitterFollow.twitterAccountUsername;
+        const name = twitterFollow.twitterAccount.name;
+        const username = twitterFollow.twitterAccount.username;
         const channel = interaction.guild.channels.cache.get(twitterFollow.channelId);
-        followList += `${i + 1}. [@${username}](https://twitter.com/${username}/) in ${channel}\n`;
+        followList += `${i + 1}. ${name} ([@${username}](https://twitter.com/${username}/)) in ${channel}\n`;
     });
 
     const embed = new MessageEmbed()

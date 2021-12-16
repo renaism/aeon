@@ -22,4 +22,9 @@ module.exports = {
         port: process.env.DB_PORT,
         dialect: process.env.DB_DIALECT,
     },
+
+    // Twitter API credentials
+    twitter: {
+        bearerToken: process.env.TWITTER_BEARER_TOKEN,
+    },
 };
